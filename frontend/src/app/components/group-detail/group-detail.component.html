@@ -21,6 +21,7 @@
         <div class="card">
           <div class="card-header">
             <h2>Members</h2>
+            <button class="btn-add" (click)="openAddMemberDialog()">+ Add Member</button>
           </div>
           <div class="card-body">
             <div class="member-list" *ngIf="group.members && group.members.length > 0">
@@ -160,6 +161,61 @@
         <button class="btn-primary" (click)="addExpense()" [disabled]="isLoading">
           {{ isLoading ? 'Adding...' : 'Add Expense' }}
         </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Member Dialog -->
+  <div class="modal-overlay" *ngIf="showAddMemberDialog" (click)="closeAddMemberDialog()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Add Member</h2>
+        <button class="btn-close" (click)="closeAddMemberDialog()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="searchEmail">Search by Email</label>
+          <input
+            id="searchEmail"
+            type="email"
+            [(ngModel)]="searchEmail"
+            (input)="searchUsers()"
+            class="form-control"
+            placeholder="Enter email to search..."
+          />
+          <small class="form-help">Enter at least 3 characters to search</small>
+        </div>
+
+        <div class="search-results" *ngIf="searchEmail.length >= 3">
+          <div class="loading-message" *ngIf="isSearching">Searching...</div>
+          
+          <div class="user-results" *ngIf="!isSearching && searchResults.length > 0">
+            <div class="user-result-item" *ngFor="let user of searchResults">
+              <div class="user-result-info">
+                <div class="user-result-avatar">{{ user.name.charAt(0).toUpperCase() }}</div>
+                <div class="user-result-details">
+                  <div class="user-result-name">{{ user.name }}</div>
+                  <div class="user-result-email">{{ user.email }}</div>
+                </div>
+              </div>
+              <button 
+                class="btn-add-user" 
+                (click)="addMember(user.id)"
+                [disabled]="isLoading">
+                Add
+              </button>
+            </div>
+          </div>
+
+          <div class="no-results" *ngIf="!isSearching && searchResults.length === 0">
+            No users found or all matching users are already members.
+          </div>
+        </div>
+
+        <div class="error-message" *ngIf="errorMessage">{{ errorMessage }}</div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="closeAddMemberDialog()">Close</button>
       </div>
     </div>
   </div>

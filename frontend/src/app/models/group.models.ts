@@ -37,10 +37,10 @@ export interface ExpenseSplit {
 }
 
 export interface CreateExpenseRequest {
-  paidById: string;
+  paidBy: string;
   amount: number;
-  description: string;
-  date: string;
+  description?: string;
+  splits: { userId: string; share: number }[];
 }
 
 export interface Balance {

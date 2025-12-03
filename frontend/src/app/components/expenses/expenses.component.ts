@@ -4,7 +4,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../services/auth.service';
 import { GroupService } from '../../services/group.service';
-import { Expense, Group } from '../../models/group.models';
+import { Expense, Group, CreateExpenseRequest } from '../../models/group.models';
 
 @Component({
   selector: 'app-expenses',
@@ -109,8 +109,35 @@ export class ExpensesComponent implements OnInit {
       return;
     }
 
+    // Calculate equal splits for all members
+    const members = this.group?.members || [];
+    if (members.length === 0) {
+      this.errorMessage = 'Group has no members';
+      return;
+    }
+
+    const sharePerMember = Number((this.newExpense.amount / members.length).toFixed(2));
+    const splits = members.map(member => ({
+      userId: member.id,
+      share: sharePerMember
+    }));
+
+    // Adjust for rounding differences
+    const totalSplits = splits.reduce((sum, split) => sum + split.share, 0);
+    const difference = Number((this.newExpense.amount - totalSplits).toFixed(2));
+    if (difference !== 0 && splits.length > 0) {
+      splits[0].share = Number((splits[0].share + difference).toFixed(2));
+    }
+
+    const expenseData: CreateExpenseRequest = {
+      paidBy: this.newExpense.paidById,
+      amount: this.newExpense.amount,
+      description: this.newExpense.description,
+      splits: splits
+    };
+
     this.isLoading = true;
-    this.groupService.createExpense(this.groupId, this.newExpense).subscribe({
+    this.groupService.createExpense(this.groupId, expenseData).subscribe({
       next: (expense) => {
         this.expenses.unshift(expense);
         this.closeAddExpenseDialog();

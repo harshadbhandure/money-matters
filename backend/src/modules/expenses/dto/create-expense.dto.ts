@@ -1,20 +1,34 @@
-import { IsNotEmpty, IsNumber, IsString, IsUUID, IsDateString, Min } from 'class-validator';
+import { IsNotEmpty, IsNumber, IsString, IsUUID, IsOptional, IsArray, ValidateNested, Min } from 'class-validator';
+import { Type } from 'class-transformer';
 
-export class CreateExpenseDto {
+export class ExpenseSplitDto {
   @IsUUID()
   @IsNotEmpty()
-  paidById: string;
+  userId: string;
 
+  @IsNumber()
+  @Min(0)
+  @IsNotEmpty()
+  share: number;
+}
+
+export class CreateExpenseDto {
   @IsNumber()
   @Min(0.01)
   @IsNotEmpty()
   amount: number;
 
   @IsString()
-  @IsNotEmpty()
-  description: string;
+  @IsOptional()
+  description?: string;
 
-  @IsDateString()
+  @IsUUID()
   @IsNotEmpty()
-  date: string;
+  paidBy: string;
+
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ExpenseSplitDto)
+  @IsNotEmpty()
+  splits: ExpenseSplitDto[];
 }

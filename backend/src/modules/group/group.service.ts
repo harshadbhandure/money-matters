@@ -125,6 +125,19 @@ export class GroupService {
     };
   }
 
+  async isMember(userId: string, groupId: string): Promise<boolean> {
+    const group = await this.groupRepository.findOne({
+      where: { id: groupId },
+      relations: ['members'],
+    });
+
+    if (!group) {
+      return false;
+    }
+
+    return group.members.some((member) => member.id === userId);
+  }
+
   private mapToMemberDto(user: User): GroupMemberDto {
     return {
       id: user.id,

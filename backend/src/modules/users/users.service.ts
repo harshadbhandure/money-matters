@@ -51,4 +51,12 @@ export class UsersService {
     const passwordHash = await bcrypt.hash(newPassword, 10);
     await this.usersRepository.update(userId, { passwordHash });
   }
+
+  async searchByEmail(email: string): Promise<User[]> {
+    return this.usersRepository
+      .createQueryBuilder('user')
+      .where('LOWER(user.email) LIKE LOWER(:email)', { email: `%${email}%` })
+      .limit(10)
+      .getMany();
+  }
 }

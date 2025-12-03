@@ -13,6 +13,7 @@ import { User } from '../user/user.entity';
 import { CreateExpenseDto } from './dto/create-expense.dto';
 import { ExpenseResponseDto, ExpenseSplitResponseDto } from './dto/expense-response.dto';
 import { BalanceResponseDto } from './dto/balance-response.dto';
+import { GroupService } from '../group/group.service';
 
 @Injectable()
 export class ExpensesService {
@@ -26,6 +27,7 @@ export class ExpensesService {
     @InjectRepository(User)
     private userRepository: Repository<User>,
     private dataSource: DataSource,
+    private groupService: GroupService,
   ) {}
 
   async createExpense(
@@ -33,19 +35,10 @@ export class ExpensesService {
     createExpenseDto: CreateExpenseDto,
     currentUserId: string,
   ): Promise<ExpenseResponseDto> {
-    // Validate group exists and load members
-    const group = await this.groupRepository.findOne({
-      where: { id: groupId },
-      relations: ['members'],
-    });
-
-    if (!group) {
-      throw new NotFoundException(`Group with ID ${groupId} not found`);
-    }
-
-    // Check if current user is a member of the group
-    const isCurrentUserMember = group.members.some(
-      (member) => member.id === currentUserId,
+    // Validate current user is a member of the group
+    const isCurrentUserMember = await this.groupService.isMember(
+      currentUserId,
+      groupId,
     );
 
     if (!isCurrentUserMember) {
@@ -54,22 +47,39 @@ export class ExpensesService {
       );
     }
 
-    // Validate paidBy is a group member
-    const paidByUser = group.members.find(
-      (member) => member.id === createExpenseDto.paidById,
+    // Validate paidBy user is a group member
+    const isPaidByMember = await this.groupService.isMember(
+      createExpenseDto.paidBy,
+      groupId,
     );
 
-    if (!paidByUser) {
+    if (!isPaidByMember) {
       throw new BadRequestException(
-        `User with ID ${createExpenseDto.paidById} is not a member of this group`,
+        `User with ID ${createExpenseDto.paidBy} is not a member of this group`,
       );
     }
 
-    // Calculate equal split
-    const memberCount = group.members.length;
-    const sharePerMember = Number(
-      (createExpenseDto.amount / memberCount).toFixed(2),
+    // Validate all split users are group members
+    for (const split of createExpenseDto.splits) {
+      const isMember = await this.groupService.isMember(split.userId, groupId);
+      if (!isMember) {
+        throw new BadRequestException(
+          `User with ID ${split.userId} is not a member of this group`,
+        );
+      }
+    }
+
+    // Validate total split shares equal the expense amount
+    const totalSplitAmount = createExpenseDto.splits.reduce(
+      (sum, split) => sum + split.share,
+      0,
     );
+
+    if (Math.abs(totalSplitAmount - createExpenseDto.amount) > 0.01) {
+      throw new BadRequestException(
+        `Total split amount (${totalSplitAmount}) must equal expense amount (${createExpenseDto.amount})`,
+      );
+    }
 
     // Use transaction to ensure atomicity
     const queryRunner = this.dataSource.createQueryRunner();
@@ -80,22 +90,22 @@ export class ExpensesService {
       // Create expense
       const expense = queryRunner.manager.create(Expense, {
         groupId: groupId,
-        paidById: createExpenseDto.paidById,
+        paidById: createExpenseDto.paidBy,
         amount: createExpenseDto.amount,
-        description: createExpenseDto.description,
-        date: new Date(createExpenseDto.date),
+        description: createExpenseDto.description || '',
+        date: new Date(),
       });
 
       const savedExpense = await queryRunner.manager.save(Expense, expense);
 
-      // Create expense splits for all members
+      // Create expense splits from DTO
       const splits: ExpenseSplit[] = [];
-      for (const member of group.members) {
+      for (const splitDto of createExpenseDto.splits) {
         const split = queryRunner.manager.create(ExpenseSplit, {
           expenseId: savedExpense.id,
-          userId: member.id,
-          share: sharePerMember,
-          paid: member.id === createExpenseDto.paidById, // Mark as paid if they're the one who paid
+          userId: splitDto.userId,
+          share: splitDto.share,
+          paid: splitDto.userId === createExpenseDto.paidBy, // Mark as paid if they're the one who paid
         });
         splits.push(split);
       }

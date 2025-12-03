@@ -9,7 +9,7 @@ import { Group } from '../../models/group.models';
 @Component({
   selector: 'app-groups',
   standalone: true,
-  imports: [CommonModule, RouterLink, FormsModule],
+  imports: [CommonModule, FormsModule],
   templateUrl: './groups.component.html',
   styleUrls: ['./groups.component.css'],
 })

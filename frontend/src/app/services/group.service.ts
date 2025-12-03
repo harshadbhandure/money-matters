@@ -59,4 +59,11 @@ export class GroupService {
       `${this.apiUrl}/groups/${groupId}/balances`
     );
   }
+
+  // User Search API
+  searchUsers(email: string): Observable<{ id: string; name: string; email: string }[]> {
+    return this.http.get<{ id: string; name: string; email: string }[]>(
+      `${this.apiUrl}/users/search?email=${encodeURIComponent(email)}`
+    );
+  }
 }
