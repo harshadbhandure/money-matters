@@ -1,0 +1,28 @@
+{
+  "name": "money-matters",
+  "version": "1.0.0",
+  "description": "Full-stack application with Angular frontend and NestJS backend",
+  "private": true,
+  "scripts": {
+    "frontend:install": "cd frontend && cmd /c npm install",
+    "frontend:start": "cd frontend && cmd /c npm start",
+    "frontend:build": "cd frontend && cmd /c npm run build",
+    "frontend:test": "cd frontend && cmd /c npm test",
+    "backend:install": "cd backend && cmd /c npm install",
+    "backend:start": "cd backend && cmd /c npm run start",
+    "backend:start:dev": "cd backend && cmd /c npm run start:dev",
+    "backend:build": "cd backend && cmd /c npm run build",
+    "backend:test": "cd backend && cmd /c npm test",
+    "install:all": "cmd /c npm run frontend:install && cmd /c npm run backend:install",
+    "start:dev": "start cmd /c \"cd frontend && npm start\" && start cmd /c \"cd backend && npm run start:dev\"",
+    "build:all": "cmd /c npm run frontend:build && cmd /c npm run backend:build"
+  },
+  "keywords": [
+    "angular",
+    "nestjs",
+    "fullstack",
+    "typescript"
+  ],
+  "author": "",
+  "license": "ISC"
+}

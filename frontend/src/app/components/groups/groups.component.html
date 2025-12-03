@@ -1,0 +1,67 @@
+<div class="groups-container">
+  <header class="groups-header">
+    <div class="header-content">
+      <h1>Money Matters</h1>
+      <div class="user-menu" *ngIf="currentUser$ | async as user">
+        <span class="user-name">{{ user.name }}</span>
+        <button class="btn-logout" (click)="logout()">Logout</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="groups-main">
+    <div class="groups-content">
+      <div class="page-header">
+        <h2>Your Groups</h2>
+        <button class="btn-create" (click)="openCreateDialog()">+ Create Group</button>
+      </div>
+
+      <div class="loading" *ngIf="isLoading">Loading groups...</div>
+
+      <div class="groups-grid" *ngIf="!isLoading && groups.length > 0">
+        <div class="group-card" *ngFor="let group of groups" (click)="viewGroup(group.id)">
+          <div class="group-icon">👥</div>
+          <h3>{{ group.name }}</h3>
+          <p class="group-meta">Created {{ group.createdAt | date: 'mediumDate' }}</p>
+        </div>
+      </div>
+
+      <div class="empty-state" *ngIf="!isLoading && groups.length === 0">
+        <div class="empty-icon">📊</div>
+        <h3>No groups yet</h3>
+        <p>Create a group to start splitting expenses with friends</p>
+        <button class="btn-primary" (click)="openCreateDialog()">Create Your First Group</button>
+      </div>
+    </div>
+  </main>
+
+  <!-- Create Group Dialog -->
+  <div class="modal-overlay" *ngIf="showCreateDialog" (click)="closeCreateDialog()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Create New Group</h2>
+        <button class="btn-close" (click)="closeCreateDialog()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="groupName">Group Name</label>
+          <input
+            id="groupName"
+            type="text"
+            [(ngModel)]="newGroupName"
+            class="form-control"
+            placeholder="e.g., Roommates, Trip to Paris"
+            (keyup.enter)="createGroup()"
+          />
+        </div>
+        <div class="error-message" *ngIf="errorMessage">{{ errorMessage }}</div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="closeCreateDialog()">Cancel</button>
+        <button class="btn-primary" (click)="createGroup()" [disabled]="isLoading">
+          {{ isLoading ? 'Creating...' : 'Create Group' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

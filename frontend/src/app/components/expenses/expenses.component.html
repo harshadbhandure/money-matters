@@ -1,0 +1,126 @@
+<div class="expenses-container">
+  <header class="expenses-header">
+    <div class="header-content">
+      <div class="header-left">
+        <a [routerLink]="['/groups', groupId]" class="back-link">← Back to Group</a>
+        <h1>{{ group?.name || 'Expenses' }}</h1>
+      </div>
+      <div class="user-menu" *ngIf="currentUser$ | async as user">
+        <span class="user-name">{{ user.name }}</span>
+        <button class="btn-logout" (click)="logout()">Logout</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="expenses-main">
+    <div class="expenses-content">
+      <div class="page-header">
+        <h2>Group Expenses</h2>
+        <button class="btn-create" (click)="openAddExpenseDialog()">+ Add Expense</button>
+      </div>
+
+      <div class="loading" *ngIf="isLoading">Loading expenses...</div>
+
+      <div class="expense-list" *ngIf="!isLoading && expenses.length > 0">
+        <div class="expense-card" *ngFor="let expense of expenses">
+          <div class="expense-header">
+            <div class="expense-icon">💰</div>
+            <div class="expense-main-info">
+              <div class="expense-description">{{ expense.description }}</div>
+              <div class="expense-meta">
+                Paid by {{ expense.paidByName }} on {{ expense.date | date: 'mediumDate' }}
+              </div>
+            </div>
+            <div class="expense-amount">${{ expense.amount.toFixed(2) }}</div>
+          </div>
+          <div class="expense-splits" *ngIf="expense.splits && expense.splits.length > 0">
+            <div class="splits-header">Split Details:</div>
+            <div class="split-items">
+              <div class="split-item" *ngFor="let split of expense.splits">
+                <span class="split-name">{{ split.userName }}</span>
+                <span class="split-share">${{ split.share.toFixed(2) }}</span>
+                <span class="split-status" [class.paid]="split.paid">
+                  {{ split.paid ? '✓ Paid' : 'Unpaid' }}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="empty-state" *ngIf="!isLoading && expenses.length === 0">
+        <div class="empty-icon">💰</div>
+        <h3>No expenses yet</h3>
+        <p>Add your first expense to start tracking group spending</p>
+        <button class="btn-primary" (click)="openAddExpenseDialog()">Add Expense</button>
+      </div>
+    </div>
+  </main>
+
+  <!-- Add Expense Dialog -->
+  <div class="modal-overlay" *ngIf="showAddExpenseDialog" (click)="closeAddExpenseDialog()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Add Expense</h2>
+        <button class="btn-close" (click)="closeAddExpenseDialog()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="description">Description *</label>
+          <input
+            id="description"
+            type="text"
+            [(ngModel)]="newExpense.description"
+            class="form-control"
+            placeholder="e.g., Dinner at restaurant"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="amount">Amount *</label>
+          <input
+            id="amount"
+            type="number"
+            [(ngModel)]="newExpense.amount"
+            class="form-control"
+            placeholder="0.00"
+            step="0.01"
+            min="0.01"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="paidBy">Paid By *</label>
+          <select id="paidBy" [(ngModel)]="newExpense.paidById" class="form-control">
+            <option value="">Select member</option>
+            <option *ngFor="let member of group?.members" [value]="member.id">
+              {{ member.name }}
+            </option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="date">Date *</label>
+          <input
+            id="date"
+            type="date"
+            [(ngModel)]="newExpense.date"
+            class="form-control"
+          />
+        </div>
+
+        <div class="info-message">
+          The expense will be split equally among all group members.
+        </div>
+
+        <div class="error-message" *ngIf="errorMessage">{{ errorMessage }}</div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="closeAddExpenseDialog()">Cancel</button>
+        <button class="btn-primary" (click)="addExpense()" [disabled]="isLoading">
+          {{ isLoading ? 'Adding...' : 'Add Expense' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
